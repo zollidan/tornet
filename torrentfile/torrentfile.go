@@ -2,6 +2,7 @@ package torrentfile
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/sha1"
 	"fmt"
 	"os"
@@ -94,4 +95,46 @@ func (bto *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
 		Name:        bto.Info.Name,
 	}
 	return t, nil
+}
+
+
+func (t *TorrentFile) DownloadToFile(path string) error {
+	var peerID [20]byte
+	_, err := rand.Read(peerID[:])
+	if err != nil {
+		return err
+	}
+
+	peers, err := t.requestPeers(peerID, Port)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Found %d peers for torrent %s\n", len(peers), t.Name)
+	fmt.Printf("First peer IP: %s", peers[0].IP)
+
+	// torrent := p2p.Torrent{
+	// 	Peers:       peers,
+	// 	PeerID:      peerID,
+	// 	InfoHash:    t.InfoHash,
+	// 	PieceHashes: t.PieceHashes,
+	// 	PieceLength: t.PieceLength,
+	// 	Length:      t.Length,
+	// 	Name:        t.Name,
+	// }
+	// buf, err := torrent.Download()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// outFile, err := os.Create(path)
+	// if err != nil {
+	// 	return err
+	// }
+	// defer outFile.Close()
+	// _, err = outFile.Write(buf)
+	// if err != nil {
+	// 	return err 
+	// }
+	return nil
 }

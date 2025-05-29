@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -10,12 +9,14 @@ import (
 
 func main() {
 	inPath := os.Args[1]
+	outPath := os.Args[2]
 
 	tf, err := torrentfile.Open(inPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Printf(tf.Name)
+	err = tf.DownloadToFile(outPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
-
