@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/jackpal/bencode-go"
+	"github.com/zollidan/tornet/p2p"
 )
 
 // Port to listen on
@@ -111,30 +112,29 @@ func (t *TorrentFile) DownloadToFile(path string) error {
 	}
 
 	fmt.Printf("Found %d peers for torrent %s\n", len(peers), t.Name)
-	fmt.Printf("First peer IP: %s", peers[0].IP)
 
-	// torrent := p2p.Torrent{
-	// 	Peers:       peers,
-	// 	PeerID:      peerID,
-	// 	InfoHash:    t.InfoHash,
-	// 	PieceHashes: t.PieceHashes,
-	// 	PieceLength: t.PieceLength,
-	// 	Length:      t.Length,
-	// 	Name:        t.Name,
-	// }
-	// buf, err := torrent.Download()
-	// if err != nil {
-	// 	return err
-	// }
+	torrent := p2p.Torrent{
+		Peers:       peers,
+		PeerID:      peerID,
+		InfoHash:    t.InfoHash,
+		PieceHashes: t.PieceHashes,
+		PieceLength: t.PieceLength,
+		Length:      t.Length,
+		Name:        t.Name,
+	}
+	buf, err := torrent.Download()
+	if err != nil {
+		return err
+	}
 
-	// outFile, err := os.Create(path)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer outFile.Close()
-	// _, err = outFile.Write(buf)
-	// if err != nil {
-	// 	return err 
-	// }
+	outFile, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	_, err = outFile.Write(buf)
+	if err != nil {
+		return err 
+	}
 	return nil
 }
