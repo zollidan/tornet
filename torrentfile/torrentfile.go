@@ -11,10 +11,6 @@ import (
 	"github.com/zollidan/tornet/p2p"
 )
 
-// Port to listen on
-const Port uint16 = 6881
-
-// TorrentFile encodes the metadata from a .torrent file
 type TorrentFile struct {
 	Announce    string
 	InfoHash    [20]byte
@@ -36,7 +32,49 @@ type bencodeTorrent struct {
 	Info     bencodeInfo `bencode:"info"`
 }
 
-// Open parses a torrent file
+// Port to listen on
+const Port uint16 = 6881
+
+func (t *TorrentFile) DownloadToFile(path string) error {
+	var peerID [20]byte
+	_, err := rand.Read(peerID[:])
+	if err != nil {
+		return err
+	}
+	peers, err := t.requestPeers(peerID, Port)
+	if err != nil {
+		return err
+	}
+
+	torrent := p2p.Torrent{
+		Peers:       peers,
+		PeerID:      peerID,
+		InfoHash:    t.InfoHash,
+		PieceHashes: t.PieceHashes,
+		PieceLength: t.PieceLength,
+		Length:      t.Length,
+		Name:        t.Name,
+	}
+
+	torrent.Download()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// file, err := os.Create(path)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// defer file.Close()
+	// _, err = file.Write(buf)
+	// if err != nil {
+	// 	return err
+	// }
+	return nil
+}
+
+
 func Open(path string) (TorrentFile, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -66,7 +104,7 @@ func (i *bencodeInfo) splitPieceHashes() ([][20]byte, error) {
 	hashLen := 20 // Length of SHA-1 hash
 	buf := []byte(i.Pieces)
 	if len(buf)%hashLen != 0 {
-		err := fmt.Errorf("received malformed pieces of length %d", len(buf))
+		err := fmt.Errorf("Received malformed pieces of length %d", len(buf))
 		return nil, err
 	}
 	numHashes := len(buf) / hashLen
@@ -96,45 +134,4 @@ func (bto *bencodeTorrent) toTorrentFile() (TorrentFile, error) {
 		Name:        bto.Info.Name,
 	}
 	return t, nil
-}
-
-
-func (t *TorrentFile) DownloadToFile(path string) error {
-	var peerID [20]byte
-	_, err := rand.Read(peerID[:])
-	if err != nil {
-		return err
-	}
-
-	peers, err := t.requestPeers(peerID, Port)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Found %d peers for torrent %s\n", len(peers), t.Name)
-
-	torrent := p2p.Torrent{
-		Peers:       peers,
-		PeerID:      peerID,
-		InfoHash:    t.InfoHash,
-		PieceHashes: t.PieceHashes,
-		PieceLength: t.PieceLength,
-		Length:      t.Length,
-		Name:        t.Name,
-	}
-	buf, err := torrent.Download()
-	if err != nil {
-		return err
-	}
-
-	outFile, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-	_, err = outFile.Write(buf)
-	if err != nil {
-		return err 
-	}
-	return nil
 }
